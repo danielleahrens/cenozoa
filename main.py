@@ -35,13 +35,26 @@ def sensor():
 def metric():
     request_obj = request.get_json()
     #TODO: probably don't need to query database for every metric request,
-    # probs load all sensor IDs into memory and consulting that.
+    # load all sensor IDs into memory and consult that is probs more efficient.
     verify_sensor(request_obj['sensor_type'], request_obj['sensor_id'])
+    sensor = get_sensor(id=request_obj['sensor_id'])
+    try:
+        location = sensor[0]['location']
+        tags = request_obj['tags'] + [{'location': location}]
+        request_obj['tags'] = tags
+    except:
+        print(f'sensor {sensor[0]["sensor_id"]} has no location associated with it, not adding to tags.')
+    try:
+        status = sensor[0]['status']
+        tags = request_obj['tags'] + [{'status': status}]
+        request_obj['tags'] = tags
+    except:
+        print(f'sensor {sensor[0]["sensor_id"]} has no status associated with it, not adding to tags')
     resp = metric_service.create(request_obj)
     return Response(status=201)
 
 def verify_sensor(sensor_type, sensor_id):
-    sensors = get_sensor(sensor_id)
+    sensors = get_sensor(id=sensor_id)
     print(f'get sensors: {sensors}')
     if (len(sensors) == 0):
         print(f'no sensors with ID {sensor_id} found, creating new sensor of type {sensor_type}')

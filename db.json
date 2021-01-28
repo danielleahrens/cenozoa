@@ -1,1 +1,1 @@
-{"_default": {"1": {"sensor_type": "batCave", "sensor_id": "fruitBat", "location": "basement"}, "2": {"sensor_type": "batCave", "sensor_id": "vampireBat", "location": "bedroom"}, "3": {"sensor_type": "batCave", "sensor_id": "brownBat", "location": "kitchen"}}}
+{"_default": {"1": {"sensor_type": "batCave", "sensor_id": "fruitBat", "location": "kitchen"}, "2": {"sensor_type": "batCave", "sensor_id": "vampireBat", "location": "bedroom"}, "3": {"sensor_type": "batCave", "sensor_id": "brownBat", "location": "kitchen"}}}
