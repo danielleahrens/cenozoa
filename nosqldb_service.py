@@ -8,11 +8,18 @@ def new_sensor(sensor_type: str, sensor_id: str):
     db.insert({'sensor_type': sensor_type, 'sensor_id': sensor_id})
     return
 
-def get_sensor(id: str):
-    # queries database for sensor given sensor ID, 
+def get_sensor(**kwargs):
+    # queries database for sensor given sensor ID or location(s), 
     # returns array of sensors includes the sensor's 
     # location, alert levels and statuses
-    resp = db.search(Sensor.sensor_id == id)
+    id = kwargs.get('id', None)
+    locations = kwargs.get('locations', None)
+    if (locations is not None and len(locations) > 0):
+        resp = _get_location(locations)
+    elif (id is not None):
+        resp = db.search(Sensor.sensor_id == id)
+    else:
+        resp = db.all()
     return resp
 
 def update_location(id: str, location: str):
@@ -20,23 +27,13 @@ def update_location(id: str, location: str):
     db.update({'location': location}, Sensor.sensor_id == id)
     return
 
-def get_location(locations: list[str]):
+def _get_location(locations: list[str]):
     # queries database for sensors given location(s), 
     # returns array of sensors
-    count_location = len(locations)
-    if (count_location == 1):
-        resp = db.search(Sensor.location == locations[0])
-    elif (count_location < 1):
-        resp = []
-    else:
-        query = f'(Sensor.location == '
-        for location in locations:
-            if (locations[count_location - 1] == location):
-                query = query + location + '))'
-            else:
-                query = query + location + ') | (Sensor.location == '
-        print(f'search query: {query}')
-        resp = db.search(query)
+    resp = []
+    for location in locations:
+        result = db.search(Sensor.location == location)
+        resp = resp + result
     return resp
 
 def update_alert(id: str, upper_limit: float, lower_limit: float, time: float):

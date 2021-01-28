@@ -6,7 +6,6 @@ class MetricService:
         pass
 
     def create(self, metric_request):
-        print(metric_request)
         metric = Metric(
             sensor_type = metric_request['sensor_type'], 
             sensor_id = metric_request['sensor_id'], 
@@ -32,6 +31,5 @@ class MetricService:
             for k in tag.keys():
                 for data in influx_body:
                     data["tags"][k] = tag[k]
-        print(influx_body)
         write_data(influx_body)
         return 
