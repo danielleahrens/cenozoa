@@ -1,12 +1,12 @@
 from models import Metric
 from influxdb_service import write_data
-import json
 
 class MetricService:
     def __init__(self):
         pass
 
     def create(self, metric_request):
+        print(metric_request)
         metric = Metric(
             sensor_type = metric_request['sensor_type'], 
             sensor_id = metric_request['sensor_id'], 
@@ -15,6 +15,7 @@ class MetricService:
             metric_value = metric_request['metric_value'], 
             tags = metric_request['tags']
         )
+
         influx_body = [{
             "measurement": metric.metric_name,
             "tags": {
@@ -26,6 +27,11 @@ class MetricService:
                 "Float_value": metric.metric_value
             }
         }]
+        add_tags = metric.tags
+        for tag in add_tags:
+            for k in tag.keys():
+                for data in influx_body:
+                    data["tags"][k] = tag[k]
         print(influx_body)
         write_data(influx_body)
         return 
