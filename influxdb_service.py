@@ -12,5 +12,5 @@ def write_data(json_body):
     return resp
 
 def read_data(query):
-    resp = influx_client(query)
+    resp = influx_client.query(query)
     return resp

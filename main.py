@@ -3,8 +3,11 @@ from metrics_service import MetricService
 from models import Metric
 from config import config
 from nosqldb_service import new_sensor, get_sensor, update_location
+from influxdb_service import read_data
 
 import json
+import time
+import numpy
 
 metric_service = MetricService()
 
@@ -22,7 +25,7 @@ def hello_name(name):
 def sensor():
     if request.method == 'GET':
         locations = request.args.getlist('l')
-        resp = get_sensor(locations=locations)
+        sensors = get_sensor(locations=locations)
         return jsonify(resp), 201
 
     if request.method == 'PUT':
@@ -31,32 +34,68 @@ def sensor():
         update_location(request_obj['sensor_id'], request_obj['location'])
     return Response(status=201)
 
-@app.route("/sensor/metric", methods=["POST"])
+@app.route("/sensor/metric", methods=["GET", "POST"])
 def metric():
-    request_obj = request.get_json()
-    #TODO: probably don't need to query database for every metric request,
-    # load all sensor IDs into memory and consult that is probs more efficient.
-    verify_sensor(request_obj['sensor_type'], request_obj['sensor_id'])
-    sensor = get_sensor(id=request_obj['sensor_id'])
-    try:
-        location = sensor[0]['location']
-        tags = request_obj['tags'] + [{'location': location}]
-        request_obj['tags'] = tags
-    except:
-        print(f'sensor {sensor[0]["sensor_id"]} has no location associated with it, not adding to tags.')
-    try:
-        status = sensor[0]['status']
-        tags = request_obj['tags'] + [{'status': status}]
-        request_obj['tags'] = tags
-    except:
-        print(f'sensor {sensor[0]["sensor_id"]} has no status associated with it, not adding to tags')
-    resp = metric_service.create(request_obj)
-    return Response(status=201)
+    if (request.method == 'GET'):
+        time_range = int((time.time() - 86400) * 1000000000) # 86,400 seconds in 24 hours, convert seconds to nanoseconds
+        locations = request.args.getlist('l')
+        sensors = get_sensor(locations=locations)
+        measurements = read_data('SHOW measurements')
+        measurements = measurements.raw['series'][0]['values']
+        i = 0
+        for sensor in sensors:
+            # using sensor_id query influx 
+            # return current (i.e. most recent), 24 hour high, 24 hour low data 
+            # for each type of measurement
+            for measurement in measurements:
+                query = f"SELECT time, Float_value, sensor_id FROM {measurement[0]} where time > {time_range} and sensor_id = \'{sensor['sensor_id']}\' ORDER BY time desc"
+                data = read_data(query)
+                if len(data.raw['series']) > 0:
+                    data_points = data.raw['series'][0]['values']
+                    j = 0
+                    higest_measurement = float(data_points[0][1])
+                    lowest_measurement = float(data_points[0][1])
+                    for point in data_points:
+                        if j == 0:
+                            current_measurement = float(point[1]) # data values are listed in time, value, id order.
+                            j = 1
+                        if float(point[1]) > higest_measurement:
+                            higest_measurement = float(point[1])
+                        if float(point[1]) < lowest_measurement:
+                            lowest_measurement = float(point[1])
+                    if 'measurement' not in sensor:
+                        sensor['measurement'] = {measurement[0]: {'current': current_measurement, 'high': higest_measurement, 'low': lowest_measurement}}
+                    else:
+                        sensor['measurement'][measurement[0]] = {'current': current_measurement, 'high': higest_measurement, 'low': lowest_measurement}
+            sensors[i] = sensor
+            i = i + 1
+        resp=[{},{}]
+        return jsonify(sensors), 201
+    
+    if request.method == 'POST':
+        request_obj = request.get_json()
+        #TODO: probably don't need to query database for every metric request,
+        # load all sensor IDs into memory and consult that is probs more efficient.
+        verify_sensor(request_obj['sensor_type'], request_obj['sensor_id'])
+        sensor = get_sensor(id=request_obj['sensor_id'])
+        try:
+            location = sensor[0]['location']
+            tags = request_obj['tags'] + [{'location': location}]
+            request_obj['tags'] = tags
+        except:
+            print(f'sensor {sensor[0]["sensor_id"]} has no location associated with it, not adding to tags.')
+        try:
+            status = sensor[0]['status']
+            tags = request_obj['tags'] + [{'status': status}]
+            request_obj['tags'] = tags
+        except:
+            print(f'sensor {sensor[0]["sensor_id"]} has no status associated with it, not adding to tags')
+        resp = metric_service.create(request_obj)
+        return Response(status=201)
 
 def verify_sensor(sensor_type, sensor_id):
     sensors = get_sensor(id=sensor_id)
-    print(f'get sensors: {sensors}')
-    if (len(sensors) == 0):
+    if len(sensors) == 0:
         print(f'no sensors with ID {sensor_id} found, creating new sensor of type {sensor_type}')
         new_sensor(sensor_type, sensor_id)
     return
