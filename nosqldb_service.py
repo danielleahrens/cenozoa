@@ -12,12 +12,12 @@ def get_sensor(**kwargs):
     # queries database for sensor given sensor ID or location(s), 
     # returns array of sensors includes the sensor's 
     # location, alert levels and statuses
-    id = kwargs.get('id', None)
+    ids = kwargs.get('ids', None)
     locations = kwargs.get('locations', None)
     if (locations is not None and len(locations) > 0):
-        resp = _get_location(locations)
-    elif (id is not None):
-        resp = db.search(Sensor.sensor_id == id)
+        resp = _get_by_location(locations)
+    elif (ids is not None and len(ids) > 0):
+        resp = _get_by_id(ids)
     else:
         resp = db.all()
     return resp
@@ -27,7 +27,7 @@ def update_location(id: str, location: str):
     db.update({'location': location}, Sensor.sensor_id == id)
     return
 
-def _get_location(locations: list[str]):
+def _get_by_location(locations: list[str]):
     # queries database for sensors given location(s), 
     # returns array of sensors
     resp = []
@@ -36,14 +36,23 @@ def _get_location(locations: list[str]):
         resp = resp + result
     return resp
 
+def _get_by_id(ids: list[str]):
+    # queries database for sensors with given id(s),
+    # returns array of sensors
+    resp = []
+    for id in ids:
+        result = db.search(Sensor.sensor_id == id)
+        resp = resp + result
+    return resp
+
 def update_alert(id: str, upper_limit: float, lower_limit: float, time: float):
     # updates alert values of sensor given sensor ID
-    db.update({'alerts': {'upper': upper_limit, 'lower': lower_limit, 'time': time}}, Sensor.sensor_id == id)
+    db.update({'alert': {'upper': upper_limit, 'lower': lower_limit, 'time_s': time}}, Sensor.sensor_id == id)
     return
 
 def update_status(id: str, open: bool, heating: bool, watering: bool):
     # updates status values of sensor given sensor ID
-    db.update({'statuses': {'open': open, 'heating': heating, 'watering': watering}}, Sensor.sensor_id == id)
+    db.update({'status': {'open': open, 'heating': heating, 'watering': watering}}, Sensor.sensor_id == id)
     return
 
 

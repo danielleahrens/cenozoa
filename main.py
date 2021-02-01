@@ -2,7 +2,7 @@ from flask import Flask, Response, request, jsonify
 from metrics_service import MetricService
 from models import Metric
 from config import config
-from nosqldb_service import new_sensor, get_sensor, update_location
+from nosqldb_service import new_sensor, get_sensor, update_location, update_alert
 from influxdb_service import read_data
 
 import json
@@ -69,7 +69,6 @@ def metric():
                         sensor['measurement'][measurement[0]] = {'current': current_measurement, 'high': higest_measurement, 'low': lowest_measurement}
             sensors[i] = sensor
             i = i + 1
-        resp=[{},{}]
         return jsonify(sensors), 201
     
     if request.method == 'POST':
@@ -92,6 +91,39 @@ def metric():
             print(f'sensor {sensor[0]["sensor_id"]} has no status associated with it, not adding to tags')
         resp = metric_service.create(request_obj)
         return Response(status=201)
+
+@app.route("/sensor/metric/detail", methods=["GET"])
+def detail():
+    if request.method == 'GET':
+        time_range = int((time.time() - 604800) * 1000000000) # 604,800 seconds in 1 week, convert seconds to nanoseconds
+        sensor_id = request.args.getlist('s')
+        sensors = get_sensor(ids=sensor_id)
+        measurements = read_data('SHOW measurements')
+        measurements = measurements.raw['series'][0]['values']
+        i = 0
+        for sensor in sensors:
+            # using sensor_id(s) query influx 
+            # return 1 week of data
+            for measurement in measurements:
+                query = f"SELECT time, Float_value, sensor_id FROM {measurement[0]} where time > {time_range} and sensor_id = \'{sensor['sensor_id']}\' ORDER BY time desc"
+                data = read_data(query)
+                if len(data.raw['series']) > 0:
+                    data_points = data.raw['series'][0]['values']
+                    if 'measurement' not in sensor:
+                        sensor['measurement'] = {measurement[0]: data_points}
+                    else:
+                        sensor['measurement'][measurement[0]] = data_points
+            sensors[i] = sensor
+            i = i + 1
+    return jsonify(sensors), 201
+
+@app.route("/sensor/metric/alert", methods=["PUT"])
+def alert():
+    if request.method == 'PUT':
+        request_obj = request.get_json()
+        verify_sensor(request_obj['sensor_type'], request_obj['sensor_id'])
+        update_alert(request_obj['sensor_id'], request_obj['alert']['upper'], request_obj['alert']['lower'], request_obj['alert']['time_s'])
+    return Response(status=201)
 
 def verify_sensor(sensor_type, sensor_id):
     sensors = get_sensor(id=sensor_id)
