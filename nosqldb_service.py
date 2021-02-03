@@ -45,9 +45,24 @@ def _get_by_id(ids: list[str]):
         resp = resp + result
     return resp
 
-def update_alert(id: str, upper_limit: float, lower_limit: float, time: float):
+def update_alert(id: str, measurement: str, upper_limit: float, lower_limit: float, time: float):
     # updates alert values of sensor given sensor ID
-    db.update({'alert': {'upper': upper_limit, 'lower': lower_limit, 'time_s': time}}, Sensor.sensor_id == id)
+    print(f'id: {id}; measurement: {measurement}; upper_limit: {upper_limit}; lower_limit: {lower_limit}; time: {time}')
+    sensors = get_sensor(ids=id)
+    print(f'here are the sensors found: {sensors}')
+    if 'alert' not in sensors[0]:
+        print('we do not have alert in sensors\'s keys')
+        db.update({'alert': {measurement: {'upper': upper_limit, 'lower': lower_limit, 'time_s': time}}}, Sensor.sensor_id == id[0])
+        sensors = get_sensor(ids=id)
+        print(f'one alert added to sensor: {sensors}')
+    else:
+        print('we have alert in sensors\'s keys')
+        alert = sensors[0]['alert']
+        alert[measurement] = {'upper': upper_limit, 'lower': lower_limit, 'time_s': time}
+        print(f'heres alert: {alert}')
+        db.update({'alert': alert}, Sensor.sensor_id == id[0])
+        sensors = get_sensor(ids=id)
+        print(f'here is the updated sensor (hopefully): {sensors}')
     return
 
 def update_status(id: str, open: bool, heating: bool, watering: bool):

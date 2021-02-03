@@ -1,4 +1,5 @@
 from flask import Flask, Response, request, jsonify
+from flask_cors import CORS, cross_origin
 from metrics_service import MetricService
 from models import Metric
 from config import config
@@ -12,6 +13,8 @@ import numpy
 metric_service = MetricService()
 
 app= Flask(__name__)
+CORS(app, resources={r"/*": {"origins": config.app['cors']}})
+
 
 @app.route("/")
 def hello():
@@ -26,17 +29,20 @@ def sensor():
     if request.method == 'GET':
         locations = request.args.getlist('l')
         sensors = get_sensor(locations=locations)
-        return jsonify(resp), 201
+        response = jsonify(items=sensors)
+        response.headers.add("Access-Control-Allow-Origin", config.app['cors'])
+        return response, 201
 
     if request.method == 'PUT':
         request_obj = request.get_json()
         verify_sensor(request_obj['sensor_type'], request_obj['sensor_id'])
-        update_location(request_obj['sensor_id'], request_obj['location'])
+        update_location(request_obj['sensor_id'][0], request_obj['location'])
     return Response(status=201)
 
 @app.route("/sensor/metric", methods=["GET", "POST"])
 def metric():
     if (request.method == 'GET'):
+        # TODO: return unit of measure with request
         time_range = int((time.time() - 86400) * 1000000000) # 86,400 seconds in 24 hours, convert seconds to nanoseconds
         locations = request.args.getlist('l')
         sensors = get_sensor(locations=locations)
@@ -69,14 +75,15 @@ def metric():
                         sensor['measurement'][measurement[0]] = {'current': current_measurement, 'high': higest_measurement, 'low': lowest_measurement}
             sensors[i] = sensor
             i = i + 1
-        return jsonify(sensors), 201
+        response = jsonify(items=sensors)
+        return response, 201
     
     if request.method == 'POST':
         request_obj = request.get_json()
         #TODO: probably don't need to query database for every metric request,
         # load all sensor IDs into memory and consult that is probs more efficient.
-        verify_sensor(request_obj['sensor_type'], request_obj['sensor_id'])
-        sensor = get_sensor(id=request_obj['sensor_id'])
+        verify_sensor(request_obj['sensor_type'], list(request_obj['sensor_id']))
+        sensor = get_sensor(ids=request_obj['sensor_id'])
         try:
             location = sensor[0]['location']
             tags = request_obj['tags'] + [{'location': location}]
@@ -89,6 +96,7 @@ def metric():
             request_obj['tags'] = tags
         except:
             print(f'sensor {sensor[0]["sensor_id"]} has no status associated with it, not adding to tags')
+        request_obj['sensor_id'] = request_obj['sensor_id'][0]
         resp = metric_service.create(request_obj)
         return Response(status=201)
 
@@ -118,18 +126,29 @@ def detail():
     return jsonify(sensors), 201
 
 @app.route("/sensor/metric/alert", methods=["PUT"])
+@cross_origin()
 def alert():
     if request.method == 'PUT':
         request_obj = request.get_json()
+        print(f'heres the request_obj {request_obj}')
         verify_sensor(request_obj['sensor_type'], request_obj['sensor_id'])
-        update_alert(request_obj['sensor_id'], request_obj['alert']['upper'], request_obj['alert']['lower'], request_obj['alert']['time_s'])
+        print('verified sensor')
+        for measurement in request_obj['alert'].keys():
+            print(f'heres a measurement {measurement}')
+            update_alert(
+                request_obj['sensor_id'], 
+                measurement, 
+                request_obj['alert'][measurement]['upper'], 
+                request_obj['alert'][measurement]['lower'], 
+                request_obj['alert'][measurement]['time_s']
+            )
     return Response(status=201)
 
-def verify_sensor(sensor_type, sensor_id):
-    sensors = get_sensor(id=sensor_id)
+def verify_sensor(sensor_type, sensor_id: list):
+    sensors = get_sensor(ids=sensor_id)
     if len(sensors) == 0:
-        print(f'no sensors with ID {sensor_id} found, creating new sensor of type {sensor_type}')
-        new_sensor(sensor_type, sensor_id)
+        print(f'no sensors with ID {sensor_id[0]} found, creating new sensor of type {sensor_type}')
+        new_sensor(sensor_type, sensor_id[0])
     return
 
 if __name__ == "__main__":

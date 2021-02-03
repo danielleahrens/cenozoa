@@ -1,6 +1,7 @@
 {
   "app": {
-    "environment": "prod"
+    "environment": "prod",
+    "cors": ""
   },
   "influx": {
     "host": "192.168.1.10",
