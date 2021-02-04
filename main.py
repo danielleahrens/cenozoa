@@ -54,7 +54,7 @@ def metric():
             # return current (i.e. most recent), 24 hour high, 24 hour low data 
             # for each type of measurement
             for measurement in measurements:
-                query = f"SELECT time, value, sensor_id FROM {measurement[0]} where time > {time_range} and sensor_id = \'{sensor['sensor_id']}\' ORDER BY time desc"
+                query = f"SELECT time, value, sensor_id, units FROM {measurement[0]} where time > {time_range} and sensor_id = \'{sensor['sensor_id']}\' ORDER BY time desc"
                 data = read_data(query)
                 if len(data.raw['series']) > 0:
                     data_points = data.raw['series'][0]['values']
@@ -70,9 +70,9 @@ def metric():
                         if float(point[1]) < lowest_measurement:
                             lowest_measurement = float(point[1])
                     if 'measurement' not in sensor:
-                        sensor['measurement'] = {measurement[0]: {'current': current_measurement, 'high': higest_measurement, 'low': lowest_measurement}}
+                        sensor['measurement'] = {measurement[0]: {'current': current_measurement, 'high': higest_measurement, 'low': lowest_measurement, 'uom': data_points[0][3]}}
                     else:
-                        sensor['measurement'][measurement[0]] = {'current': current_measurement, 'high': higest_measurement, 'low': lowest_measurement}
+                        sensor['measurement'][measurement[0]] = {'current': current_measurement, 'high': higest_measurement, 'low': lowest_measurement, 'uom': data_points[0][3]}
             sensors[i] = sensor
             i = i + 1
         response = jsonify(items=sensors)
