@@ -54,7 +54,7 @@ def metric():
             # return current (i.e. most recent), 24 hour high, 24 hour low data 
             # for each type of measurement
             for measurement in measurements:
-                query = f"SELECT time, Float_value, sensor_id FROM {measurement[0]} where time > {time_range} and sensor_id = \'{sensor['sensor_id']}\' ORDER BY time desc"
+                query = f"SELECT time, value, sensor_id FROM {measurement[0]} where time > {time_range} and sensor_id = \'{sensor['sensor_id']}\' ORDER BY time desc"
                 data = read_data(query)
                 if len(data.raw['series']) > 0:
                     data_points = data.raw['series'][0]['values']
@@ -113,7 +113,8 @@ def detail():
             # using sensor_id(s) query influx 
             # return 1 week of data
             for measurement in measurements:
-                query = f"SELECT time, Float_value, sensor_id FROM {measurement[0]} where time > {time_range} and sensor_id = \'{sensor['sensor_id']}\' ORDER BY time desc"
+                query = f"SELECT LAST(time), MEAN(value), LAST(sensor_id) FROM {measurement[0]} where time > {time_range} and sensor_id = \'{sensor['sensor_id']}\' GROUP BY time(30m) ORDER BY time desc"
+                print(query)
                 data = read_data(query)
                 if len(data.raw['series']) > 0:
                     data_points = data.raw['series'][0]['values']
@@ -123,18 +124,16 @@ def detail():
                         sensor['measurement'][measurement[0]] = data_points
             sensors[i] = sensor
             i = i + 1
-    return jsonify(sensors), 201
+    response = jsonify(items=sensors) 
+    return response, 201
 
 @app.route("/sensor/metric/alert", methods=["PUT"])
 @cross_origin()
 def alert():
     if request.method == 'PUT':
         request_obj = request.get_json()
-        print(f'heres the request_obj {request_obj}')
         verify_sensor(request_obj['sensor_type'], request_obj['sensor_id'])
-        print('verified sensor')
         for measurement in request_obj['alert'].keys():
-            print(f'heres a measurement {measurement}')
             update_alert(
                 request_obj['sensor_id'], 
                 measurement, 

@@ -23,7 +23,7 @@ class MetricService:
             },
             "time": int(metric.timestamp_s),
             "fields": {
-                "Float_value": metric.metric_value
+                "value": float(metric.metric_value)
             }
         }]
         add_tags = metric.tags
