@@ -3,7 +3,7 @@ from flask_cors import CORS, cross_origin
 from metrics_service import MetricService
 from models import Metric
 from config import config
-from nosqldb_service import new_sensor, get_sensor, update_location, update_alert
+from nosqldb_service import new_sensor, get_sensor, update_location, update_alert, update_alert_status
 from influxdb_service import read_data
 
 import json
@@ -139,7 +139,6 @@ def alert():
                 measurement, 
                 request_obj['alert'][measurement]['upper'], 
                 request_obj['alert'][measurement]['lower'], 
-                request_obj['alert'][measurement]['time_s']
             )
     return Response(status=201)
 
@@ -149,6 +148,51 @@ def verify_sensor(sensor_type, sensor_id: list):
         print(f'no sensors with ID {sensor_id[0]} found, creating new sensor of type {sensor_type}')
         new_sensor(sensor_type, sensor_id[0])
     return
+
+@app.route("/sensor/metric/alert/check", methods=["PUT"])
+def check_alerting():
+    time_range = int((time.time() - 330) * 1000000000) # 330 seconds in 5.5 minutes, convert seconds to nanoseconds
+    sensors = get_sensor()
+    for sensor in sensors:
+        if 'alert' in sensor.keys():
+            for measurement in sensor['alert'].keys():
+                query = f"SELECT time, value, sensor_id, units FROM {measurement} where time > {time_range} and sensor_id = \'{sensor['sensor_id']}\' ORDER BY time desc"
+                metrics = read_data(query)
+                metrics = metrics.raw['series']
+                if len(metrics) > 0:
+                    max_metric = metrics[0]['values'][0][1]
+                    min_metric = metrics[0]['values'][0][1]
+                    for metric in metrics[0]['values']:
+                        if float(metric[1]) > float(max_metric):
+                            max_metric = metric[1]
+                        elif float(metric[1]) < float(min_metric):
+                            min_metric = metric[1]
+                    print(f'max metric: {max_metric}')
+                    print(f"alert max: {sensor['alert'][measurement]['upper']['limit']}")
+                    print(f'min metric: {min_metric}')
+                    print(f"alert min: {sensor['alert'][measurement]['lower']['limit']}")
+                    
+                    if max_metric > sensor['alert'][measurement]['upper']['limit'] and sensor['alert'][measurement]['upper']['alerting'] == 'False':
+                        update_alert_status([sensor['sensor_id']], measurement, 'upper', 'True')
+                        print(f"{sensor['sensor_id']} sensor alerting for {measurement} too high, max {measurement} from the last 5 minutes: {max_metric}")
+                    elif max_metric < sensor['alert'][measurement]['upper']['limit'] and sensor['alert'][measurement]['upper']['alerting'] == 'True':
+                        update_alert_status([sensor['sensor_id']], measurement, 'upper', 'False')
+                        print(f"{sensor['sensor_id']} sensor is no longer alerting for {measurement} too high, clearing alert.")
+                    else:
+                        print(f"max measurement {max_metric} is NOT greater than {sensor['alert'][measurement]['upper']['limit']} OR sensor is already in the proper state: alerting: {sensor['alert'][measurement]['upper']['alerting']}")
+                    
+                    if min_metric < sensor['alert'][measurement]['lower']['limit'] and sensor['alert'][measurement]['lower']['alerting'] == 'False':
+                        print(f"min measurement {min_metric} is less than {sensor['alert'][measurement]['lower']['limit']} and sensor is not already in alerting state: alerting: {sensor['alert'][measurement]['lower']['alerting']}")
+                        update_alert_status([sensor['sensor_id']], measurement, 'lower', 'True')
+                    elif min_metric > sensor['alert'][measurement]['lower']['limit'] and sensor['alert'][measurement]['lower']['alerting'] == 'True':
+                        print(f"{sensor['sensor_id']} sensor is no longer alerting for {measurement} too low, clearing alert.")
+                        update_alert_status([sensor['sensor_id']], measurement, 'lower', 'False')
+                    else:
+                        print(f"min measurement {min_metric} is NOT less than {sensor['alert'][measurement]['lower']['limit']} OR sensor is already in the proper alerting state: alerting: {sensor['alert'][measurement]['lower']['alerting']}")
+    
+
+    return Response(status=201)
+
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0')
