@@ -3,6 +3,12 @@ A flask web app for IOT sensors and other devices.
 
 ## Deploying instructions
 
+`./build-local.sh {docker tag}`
+`ssh ubuntu@{ip address}`
+`sudo su -`
+`cd /tmp`
+`./build-server.sh {docker tag}`
+
 ### This app runs on a raspberry pi in a docker container. Because the raspberry pi has an ARM processor (and not a x86 as the mac has), use this build command:
 
 `cd` into the project directory
