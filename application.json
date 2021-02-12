@@ -1,7 +1,9 @@
 {
   "app": {
     "environment": "prod",
-    "cors": ""
+    "debug": "False",
+    "cors": "https://cenozoa.danielleahrens.com",
+    "db_path": "/cenozoa/db.json"
   },
   "influx": {
     "host": "192.168.1.10",
@@ -9,5 +11,8 @@
     "username": "",
     "password": "",
     "database": "cenozoa"
+  },
+  "alert": {
+    "url": ""
   }
 }
