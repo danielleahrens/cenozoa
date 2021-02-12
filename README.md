@@ -33,15 +33,15 @@ A flask web app for IOT sensors and other devices.
 
 ### If the necessary files aren't in the `/opt/cenozoa` directory on the pi, or if they've been updated on your local machine:
 `scp application.json ubuntu@{ip address}:/tmp`
-\n or \n 
+or
 `scp secrets.json ubuntu@{ip address}:/tmp`
-\n or \n 
+or
 `scp nginx_config ubuntu@{ip address}:/tmp`
 
 #### Then ssh onto pi and move file from /tmp to /opt/cenozoa, root privleges will be required:
 `mv application.json /opt/cenozoa`
-\n or \n
+or
 `mv secrets.json /opt/cenozoa`
-\n or \n
+or
 `mv nginx_config /opt/cenozoa`
 
