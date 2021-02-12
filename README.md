@@ -29,19 +29,19 @@ A flask web app for IOT sensors and other devices.
 
 ### After getting the cenozoa container running, start the nginx container:
 #### cenozoa must be running prior to running the nginx container, flags perform similar functions as mentioned above, -p binds the container's port 80 to the pi's port 80:
-`docker run -v /opt/cenozoa/nginx_config:/etc/nginx/conf.d/default.conf -p 80:80 --network=cenozoanet --name=nginx --rm -d nginx
+`docker run -v /opt/cenozoa/nginx_config:/etc/nginx/conf.d/default.conf -p 80:80 --network=cenozoanet --name=nginx --rm -d nginx`
 
 ### If the necessary files aren't in the `/opt/cenozoa` directory on the pi, or if they've been updated on your local machine:
 `scp application.json ubuntu@{ip address}:/tmp`
-or 
+\n or \n 
 `scp secrets.json ubuntu@{ip address}:/tmp`
-or 
+\n or \n 
 `scp nginx_config ubuntu@{ip address}:/tmp`
 
 #### Then ssh onto pi and move file from /tmp to /opt/cenozoa, root privleges will be required:
 `mv application.json /opt/cenozoa`
-or
+\n or \n
 `mv secrets.json /opt/cenozoa`
-or 
+\n or \n
 `mv nginx_config /opt/cenozoa`
 
