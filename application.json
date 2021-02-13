@@ -1,8 +1,8 @@
 {
   "app": {
     "environment": "prod",
-    "debug": "False",
-    "cors": "https://cenozoa.danielleahrens.com",
+    "debug": "True",
+    "cors": "http://localhost:3000",
     "db_path": "/cenozoa/db.json"
   },
   "influx": {

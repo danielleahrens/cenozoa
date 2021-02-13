@@ -20,7 +20,6 @@ CORS(app, resources={r"/*": {"origins": config.app['cors']}})
 @app.route("/sensor", methods=["GET", "PUT"])
 def sensor():
     if request.method == 'GET':
-        print(config.alert)
         locations = request.args.getlist('l')
         sensors = get_sensor(locations=locations)
         response = jsonify(items=sensors)
