@@ -17,7 +17,7 @@ metric_service = MetricService()
 app= Flask(__name__)
 CORS(app, resources={r"/*": {"origins": config.app['cors']}})
 
-@app.route("/sensor", methods=["GET", "PUT"])
+@app.route("/api/v1/sensor", methods=["GET", "PUT"])
 def sensor():
     if request.method == 'GET':
         locations = request.args.getlist('l')
@@ -32,7 +32,7 @@ def sensor():
         update_location(request_obj['sensor_id'][0], request_obj['location'])
     return Response(status=201)
 
-@app.route("/sensor/metric", methods=["GET", "POST"])
+@app.route("/api/v1/sensor/metric", methods=["GET", "POST"])
 def metric():
     if (request.method == 'GET'):
         time_range = int((time.time() - 86400) * 1000000000) # 86,400 seconds in 24 hours, convert seconds to nanoseconds
@@ -79,7 +79,7 @@ def metric():
         resp = metric_service.create(request_obj)
         return Response(status=201)
 
-@app.route("/sensor/metric/detail", methods=["GET"])
+@app.route("/api/v1/sensor/metric/detail", methods=["GET"])
 def detail():
     if request.method == 'GET':
         time_range = int((time.time() - 604800) * 1000000000) # 604,800 seconds in 1 week, convert seconds to nanoseconds
@@ -103,7 +103,7 @@ def detail():
     response = jsonify(items=sensors) 
     return response, 201
 
-@app.route("/sensor/metric/alert", methods=["PUT"])
+@app.route("/api/v1/sensor/metric/alert", methods=["PUT"])
 @cross_origin()
 def alert():
     if request.method == 'PUT':
