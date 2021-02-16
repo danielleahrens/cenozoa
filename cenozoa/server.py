@@ -24,13 +24,18 @@ def sensor():
         sensors = get_sensor(locations=locations)
         response = jsonify(items=sensors)
         response.headers.add("Access-Control-Allow-Origin", config.app['cors'])
-        return response, 201
+        
+    return response, 201
 
+@app.route("/api/v1/sensor/location", methods=["PUT"])
+def location():
     if request.method == 'PUT':
         request_obj = request.get_json()
         verify_sensor(request_obj['sensor_type'], request_obj['sensor_id'])
         update_location(request_obj['sensor_id'][0], request_obj['location'])
+    
     return Response(status=201)
+
 
 @app.route("/api/v1/sensor/metric", methods=["GET", "POST"])
 def metric():

@@ -28,4 +28,4 @@ docker kill nginx
 echo "docker rm"
 docker rm nginx
 echo "docker run"
-docker run -v /opt/cenozoa/nginx.conf:/etc/nginx/conf.d/default.conf -v /opt/cenozoa/.htpasswd:/etc/apache2/.htpasswd -v /opt/cenozoa/.supasswd:/etc/apache2/.supasswd -v /etc/letsencrypt:/etc/ssl/letsencrypt -v /opt/cenozoa/ui:/www -p 443:443 -p 80:80 --network=cenozoanet --name=nginx --rm -d nginx
+docker run -v /opt/cenozoa/nginx.conf:/etc/nginx/conf.d/default.conf -v /opt/cenozoa/.htpasswd:/etc/apache2/.htpasswd -v /opt/cenozoa/.supasswd:/etc/apache2/.supasswd -v /opt/cenozoa/.senpasswd:/etc/apache2/.senpasswd -v /etc/letsencrypt:/etc/ssl/letsencrypt -v /opt/cenozoa/ui:/www -p 443:443 -p 80:80 --network=cenozoanet --name=nginx --rm -d nginx
