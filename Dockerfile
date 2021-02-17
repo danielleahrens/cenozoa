@@ -8,10 +8,11 @@ RUN pip install -r /cenozoa/requirements.txt
 RUN pip install gunicorn
 
 ADD cenozoa /cenozoa
+RUN chmod +x /cenozoa/run.sh
 
 ENV FLASK_APP=/cenozoa/server.py
 ENV FLASK_ENV=development
 
 # CMD ["gunicorn", "--bind", "0.0.0.0:5000", "wsgi:app", "--log-level", "debug"]
-CMD ["/run.sh"]
+CMD ["/bin/bash", "./run.sh"]
 
