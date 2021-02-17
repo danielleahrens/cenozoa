@@ -21,7 +21,6 @@ def sensor():
         locations = request.args.getlist('l')
         sensors = get_sensor(locations=locations)
         response = jsonify(items=sensors)
-        response.headers.add("Access-Control-Allow-Origin", config.app['cors'])
         
     return response, 201
 

@@ -41,6 +41,12 @@ def check_alerting():
     return 201
 
 if __name__ == "__main__":
-    resp = check_alerting()
-    if resp != 201:
-        send_alert({"text": "ALERT: cenozoa experienced an error while updating the alert status of cenozoa sensors."}, config.alert['url'])
+    loop = True
+    while loop is True:
+        print('checking alert statuses')
+        resp = check_alerting()
+        if resp != 201:
+            send_alert({"text": "ALERT: cenozoa experienced an error while updating the alert status of cenozoa sensors."}, config.alert['url'])
+        t = time.localtime()
+        print(f'{time.strftime("%H:%M:%S", t)} sleeping for 5 minutes.')
+        time.sleep(300)
