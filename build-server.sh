@@ -9,7 +9,7 @@ mv /tmp/application.json /opt/cenozoa
 echo "moving file from /tmp to /opt/cenozoa 2 of 3"
 mv /tmp/secrets.json /opt/cenozoa
 echo "moving file from /tmp to /opt/cenozoa 3 of 3"
-mv /tmp/nginx_config /opt/cenozoa
+mv /tmp/nginx.conf /opt/cenozoa
 
 echo "loading docker image from tar file"
 docker load < cenozoa.tar
@@ -20,7 +20,7 @@ docker kill cenozoa
 echo "docker rm"
 docker rm cenozoa
 echo "docker run"
-docker run -v /opt/cenozoa/application.json:/cenozoa/application.json -v /opt/cenozoa/secrets.json:/cenozoa/secrets.json -e CONFIG_PATH=/cenozoa/application.json -e SECRETS_PATH=/cenozoa/secrets.json --network=cenozoanet --name=cenozoa --rm -d cenozoa:$1
+docker run -v /opt/cenozoa/application.json:/cenozoa/application.json -v /opt/cenozoa/secrets.json:/cenozoa/secrets.json -v /mnt/db.json:/cenozoa/db.json -e CONFIG_PATH=/cenozoa/application.json -e SECRETS_PATH=/cenozoa/secrets.json --network=cenozoanet --name=cenozoa --rm -d cenozoa:$1
 
 echo "running nginx docker container"
 echo "docker kill"
@@ -28,4 +28,4 @@ docker kill nginx
 echo "docker rm"
 docker rm nginx
 echo "docker run"
-docker run -v /opt/cenozoa/nginx_config:/etc/nginx/conf.d/default.conf -p 80:80 --network=cenozoanet --name=nginx --rm -d nginx
+docker run -v /opt/cenozoa/nginx.conf:/etc/nginx/conf.d/default.conf -v /opt/cenozoa/.htpasswd:/etc/apache2/.htpasswd -v /opt/cenozoa/.supasswd:/etc/apache2/.supasswd -v /opt/cenozoa/.senpasswd:/etc/apache2/.senpasswd -v /etc/letsencrypt:/etc/ssl/letsencrypt -v /opt/cenozoa/ui:/www -p 443:443 -p 80:80 --network=cenozoanet --name=nginx --rm -d nginx

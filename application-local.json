@@ -2,7 +2,6 @@
   "app": {
     "environment": "local",
     "debug": "True",
-    "cors": "http://localhost:3000",
     "db_path": "/Users/dani/projects/cenozoa/db.json"
   },
   "influx": {

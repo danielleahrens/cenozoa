@@ -1,7 +1,6 @@
 #!/bin/bash
 
 from flask import Flask, Response, request, jsonify
-from flask_cors import CORS, cross_origin
 from metrics_service import MetricService
 from models import Metric
 from config import config
@@ -15,26 +14,50 @@ import numpy
 metric_service = MetricService()
 
 app= Flask(__name__)
-CORS(app, resources={r"/*": {"origins": config.app['cors']}})
 
-@app.route("/sensor", methods=["GET", "PUT"])
+@app.route("/api/v1/sensor", methods=["GET"])
 def sensor():
     if request.method == 'GET':
-        print(config.alert)
         locations = request.args.getlist('l')
         sensors = get_sensor(locations=locations)
         response = jsonify(items=sensors)
-        response.headers.add("Access-Control-Allow-Origin", config.app['cors'])
-        return response, 201
+        
+    return response, 201
 
+@app.route("/api/v1/sensor/location", methods=["PUT"])
+def location():
     if request.method == 'PUT':
         request_obj = request.get_json()
         verify_sensor(request_obj['sensor_type'], request_obj['sensor_id'])
         update_location(request_obj['sensor_id'][0], request_obj['location'])
+    
     return Response(status=201)
 
-@app.route("/sensor/metric", methods=["GET", "POST"])
+
+@app.route("/api/v1/sensor/metric", methods=["POST"])
 def metric():
+    if request.method == 'POST':
+        request_obj = request.get_json()
+        verify_sensor(request_obj['sensor_type'], list(request_obj['sensor_id']))
+        sensor = get_sensor(ids=request_obj['sensor_id'])
+        try:
+            location = sensor[0]['location']
+            tags = request_obj['tags'] + [{'location': location}]
+            request_obj['tags'] = tags
+        except:
+            print(f'sensor {sensor[0]["sensor_id"]} has no location associated with it, not adding to tags.')
+        try:
+            status = sensor[0]['status']
+            tags = request_obj['tags'] + [{'status': status}]
+            request_obj['tags'] = tags
+        except:
+            print(f'sensor {sensor[0]["sensor_id"]} has no status associated with it, not adding to tags')
+        request_obj['sensor_id'] = request_obj['sensor_id'][0]
+        resp = metric_service.create(request_obj)
+        return Response(status=201)
+
+@app.route("/api/v1/sensor/metric/recent", methods=["GET"])
+def recent():
     if (request.method == 'GET'):
         time_range = int((time.time() - 86400) * 1000000000) # 86,400 seconds in 24 hours, convert seconds to nanoseconds
         locations = request.args.getlist('l')
@@ -58,29 +81,9 @@ def metric():
             sensors[i] = sensor
             i = i + 1
         response = jsonify(items=sensors)
-        return response, 201
-    
-    if request.method == 'POST':
-        request_obj = request.get_json()
-        verify_sensor(request_obj['sensor_type'], list(request_obj['sensor_id']))
-        sensor = get_sensor(ids=request_obj['sensor_id'])
-        try:
-            location = sensor[0]['location']
-            tags = request_obj['tags'] + [{'location': location}]
-            request_obj['tags'] = tags
-        except:
-            print(f'sensor {sensor[0]["sensor_id"]} has no location associated with it, not adding to tags.')
-        try:
-            status = sensor[0]['status']
-            tags = request_obj['tags'] + [{'status': status}]
-            request_obj['tags'] = tags
-        except:
-            print(f'sensor {sensor[0]["sensor_id"]} has no status associated with it, not adding to tags')
-        request_obj['sensor_id'] = request_obj['sensor_id'][0]
-        resp = metric_service.create(request_obj)
-        return Response(status=201)
+    return response, 201
 
-@app.route("/sensor/metric/detail", methods=["GET"])
+@app.route("/api/v1/sensor/metric/detail", methods=["GET"])
 def detail():
     if request.method == 'GET':
         time_range = int((time.time() - 604800) * 1000000000) # 604,800 seconds in 1 week, convert seconds to nanoseconds
@@ -104,8 +107,7 @@ def detail():
     response = jsonify(items=sensors) 
     return response, 201
 
-@app.route("/sensor/metric/alert", methods=["PUT"])
-@cross_origin()
+@app.route("/api/v1/sensor/metric/alert", methods=["PUT"])
 def alert():
     if request.method == 'PUT':
         request_obj = request.get_json()
