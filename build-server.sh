@@ -20,7 +20,7 @@ docker kill cenozoa
 echo "docker rm"
 docker rm cenozoa
 echo "docker run"
-docker run -v /opt/cenozoa/application.json:/cenozoa/application.json -v /opt/cenozoa/secrets.json:/cenozoa/secrets.json -e CONFIG_PATH=/cenozoa/application.json -e SECRETS_PATH=/cenozoa/secrets.json --network=cenozoanet --name=cenozoa --rm -d cenozoa:$1
+docker run -v /opt/cenozoa/application.json:/cenozoa/application.json -v /opt/cenozoa/secrets.json:/cenozoa/secrets.json -v /mnt/db.json:/cenozoa/db.json -e CONFIG_PATH=/cenozoa/application.json -e SECRETS_PATH=/cenozoa/secrets.json --network=cenozoanet --name=cenozoa --rm -d cenozoa:$1
 
 echo "running nginx docker container"
 echo "docker kill"

@@ -2,7 +2,6 @@
   "app": {
     "environment": "prod",
     "debug": "True",
-    "cors": "https://cenozoa.danielleahrens.com",
     "db_path": "/cenozoa/db.json"
   },
   "influx": {

@@ -1,7 +1,6 @@
 #!/bin/bash
 
 from flask import Flask, Response, request, jsonify
-from flask_cors import CORS, cross_origin
 from metrics_service import MetricService
 from models import Metric
 from config import config
@@ -15,7 +14,6 @@ import numpy
 metric_service = MetricService()
 
 app= Flask(__name__)
-CORS(app, resources={r"/*": {"origins": config.app['cors']}})
 
 @app.route("/api/v1/sensor", methods=["GET"])
 def sensor():
@@ -39,8 +37,6 @@ def location():
 
 @app.route("/api/v1/sensor/metric", methods=["POST"])
 def metric():
-
-    
     if request.method == 'POST':
         request_obj = request.get_json()
         verify_sensor(request_obj['sensor_type'], list(request_obj['sensor_id']))
@@ -113,7 +109,6 @@ def detail():
     return response, 201
 
 @app.route("/api/v1/sensor/metric/alert", methods=["PUT"])
-@cross_origin()
 def alert():
     if request.method == 'PUT':
         request_obj = request.get_json()
