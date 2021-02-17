@@ -13,6 +13,5 @@ RUN chmod +x /cenozoa/run.sh
 ENV FLASK_APP=/cenozoa/server.py
 ENV FLASK_ENV=development
 
-# CMD ["gunicorn", "--bind", "0.0.0.0:5000", "wsgi:app", "--log-level", "debug"]
 CMD ["/bin/bash", "./run.sh"]
 
