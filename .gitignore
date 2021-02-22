@@ -5,3 +5,4 @@ venv/
 secrets.json
 build-local.sh
 build-server.sh
+nginx.conf
