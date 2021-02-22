@@ -1,5 +1,5 @@
-Flask==1.1.2
-influxdb==5.3.1
-tinydb==4.3.0
-numpy==1.20.0
-flask-cors==3.0.10
+Flask==1.1.*
+influxdb==5.3.*
+tinydb==4.3.*
+numpy==1.20.*
+flask-cors==3.0.*

@@ -3,3 +3,5 @@ __pycache__
 venv/
 .vscode/
 secrets.json
+build-local.sh
+build-server.sh

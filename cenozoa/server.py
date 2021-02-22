@@ -1,6 +1,7 @@
 #!/bin/bash
 
 from flask import Flask, Response, request, jsonify
+from flask_cors import CORS, cross_origin
 from metrics_service import MetricService
 from models import Metric
 from config import config
@@ -14,6 +15,7 @@ import numpy
 metric_service = MetricService()
 
 app= Flask(__name__)
+CORS(app, resources={r"/*": {"origins": config.app['cors']}})
 
 @app.route("/api/v1/sensor", methods=["GET"])
 def sensor():
@@ -21,6 +23,7 @@ def sensor():
         locations = request.args.getlist('l')
         sensors = get_sensor(locations=locations)
         response = jsonify(items=sensors)
+        response.headers.add("Access-Control-Allow-Origin", config.app['cors'])
         
     return response, 201
 
