@@ -1,53 +1,23 @@
-# cenozoa
-A flask web app for IOT sensors and other devices.
+# Cenozoa
 
-## Deploying instructions
+![cenozoa_diagram](https://user-images.githubusercontent.com/31782840/108779365-bf1c8a80-7534-11eb-91d8-64da8f6bad4e.png)
 
-`./build-local.sh {docker tag}`
-`ssh ubuntu@{ip address}`
-`sudo su -`
-`cd /tmp`
-`./build-server.sh {docker tag}`
+This is the web server for the Cenozoa IoT Platform (https://cenozoa.danielleahrens.com). The component parts incldue:
+- Web Server: https://github.com/danielleahrens/cenozoa
+- User Interface: https://github.com/danielleahrens/attenborough
+- Temp/Humidity Sensor: https://github.com/danielleahrens/batCave
 
-### This app runs on a raspberry pi in a docker container. Because the raspberry pi has an ARM processor (and not a x86 as the mac has), use this build command:
+## Additional Requirements
 
-`cd` into the project directory
+### InfluxDB
+This server utilizes InfluxDB as its datastore for the measurement data received by the IoT sensors. It writes to InfluxDB for each measurement metric it receives from the IoT sensors and reads the data on request from the UI. This platform is running in a Docker container on a local linux server, an example of how to run InfluxDB: 
 
-`docker build . --platform linux/arm64 -t cenozoa:{additional tags here}`
+`docker run -p 8086:8086 -v /mnt/data:/var/lib/influxdb -d influxdb`
 
-### Next transfer the docker image to the raspberry pi:
+### TinyDB
+This server also utilizes a no SQL database for storing information about each sensor (i.e. the sensor location, the alert limits for each measurement type, the alert status). A high performance database isn't currently required for this platform, so TinyDB (https://tinydb.readthedocs.io/en/latest/) is being used. It is a very basic, document oriented database that works well in Python projects. See the db_example.json file to see an example of the structure and content of this database.
 
-#### Save the docker image as a tar file, preferably in a `tmp` directory or similar:
-`docker save cenozoa cenozoa.tar`
+### Slack
+This server includes a cron that checks each sensor's recent metrics and compares it to its alert limits (if they exist). If the alert status changes i.e. was alerting, but now is within the upper and lower limits or wasn't alerting but is now outside the upper and lower alert limits, then it will fire a message into a Slack channel. A Slack channel with a custom Slack App and bot user will be required. The App will require permission to post to a Slack channel using a private webhook URL. See these docs for an example of how to set this up: https://api.slack.com/messaging/webhooks.
 
-#### Secure copy the file to the pi, the -C flag compresses the file.
-`scp -C cenozoa.tar ubuntu@{ip address}:/tmp`
-
-#### ssh onto the pi and assume root privileges or add sudo to the command, `cd` to the `/tmp` directory:
-`docker load < cenozoa.tar`
-
-### If this is a fresh raspberry pi, before running the docker container create a docker network so this container and the nginx container will be able to communicate:
-`docker network create cenozoanet`
-
-### Run the docker container:
-#### -v sets the config file on the pi to a location accessible in the container, -e sets an environment variable which specifies the file path to the config file, --network specifies to use the docker network created above, --rm will remove the docker container after its terminated (this is required because the container was given a --name), -d so it continues running after exiting ssh session:
-`docker run -v /opt/cenozoa/application.json:/cenozoa/application.json /opt/cenozoa/secrets.json:/cenozoa/secrets.json -e CONFIG_PATH=/cenozoa/application.json SECRETS_PATH=/cenozoa/secrets.json --network=cenozoanet --name=cenozoa --rm -d cenozoa`
-
-### After getting the cenozoa container running, start the nginx container:
-#### cenozoa must be running prior to running the nginx container, flags perform similar functions as mentioned above, -p binds the container's port 80 to the pi's port 80:
-`docker run -v /opt/cenozoa/nginx_config:/etc/nginx/conf.d/default.conf -p 80:80 --network=cenozoanet --name=nginx --rm -d nginx`
-
-### If the necessary files aren't in the `/opt/cenozoa` directory on the pi, or if they've been updated on your local machine:
-`scp application.json ubuntu@{ip address}:/tmp`
-or
-`scp secrets.json ubuntu@{ip address}:/tmp`
-or
-`scp nginx_config ubuntu@{ip address}:/tmp`
-
-#### Then ssh onto pi and move file from /tmp to /opt/cenozoa, root privleges will be required:
-`mv application.json /opt/cenozoa`
-or
-`mv secrets.json /opt/cenozoa`
-or
-`mv nginx_config /opt/cenozoa`
 
