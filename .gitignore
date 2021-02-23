@@ -6,3 +6,5 @@ secrets.json
 build-local.sh
 build-server.sh
 nginx.conf
+application-local.json
+run.sh

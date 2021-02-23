@@ -3,6 +3,9 @@ import json
 defaults = {
     "app": {
         "environment": "local",
+        "debug": "True",
+        "cors": "http://localhost:3000",
+        "db_path": "../db_example.json"
     },
     "influx": {
         "host": "192.168.1.10",
@@ -10,6 +13,9 @@ defaults = {
         "username": "",
         "password": "",
         "database": "cenozoaDev"
+    },
+    "alert": {
+        "url": ""
     }
 }
 
