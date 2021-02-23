@@ -12,7 +12,7 @@ In addition to acting as the primary hub for the sensors and the UI, the Cenozoa
 
 ![cenozoa_diagram](https://user-images.githubusercontent.com/31782840/108779365-bf1c8a80-7534-11eb-91d8-64da8f6bad4e.png)
 
-This is the web server for the Cenozoa IoT Platform (https://cenozoa.danielleahrens.com). The component parts incldue:
+This is the web server for the Cenozoa IoT Platform. The component parts incldue:
 - Web Server: https://github.com/danielleahrens/cenozoa
 - User Interface: https://github.com/danielleahrens/attenborough
 - Temp/Humidity Sensor: https://github.com/danielleahrens/batCave
